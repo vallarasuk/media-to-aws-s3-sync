@@ -15,19 +15,36 @@ Developed by **[Vallarasu Kanthasamy](https://github.com/vallarasuk)**.
 
 ## ⚙️ How It Works
 
-Here is a visual representation of the plugin's architecture and synchronization flow:
+Here is a detailed visual representation of the plugin's architecture and synchronization flow. It explains how media uploads are intercepted, how WordPress splits them into various responsive sizes, and how the frontend links are dynamically replaced to serve directly from AWS S3:
 
 ```mermaid
 flowchart TD
-    A[WordPress Media Library] -->|Upload or Select Image| B(Media Sync Interface)
-    B -->|Click 'Sync to S3'| C{Is Plugin Enabled?}
-    C -->|Yes| D[Trigger AJAX Action]
-    C -->|No| E[Serve Locally]
-    D --> F[S3 Helper Class]
-    F -->|Uploads Main File & Sub-sizes| G[(AWS S3 Bucket)]
-    G -->|Returns S3 URL| H[Save S3 URL to Post Meta]
-    H --> I[Frontend URL Rewriting]
-    I -->|Serve Image from S3| J((End User View))
+    %% Upload Phase
+    A[User Uploads Image via WordPress Media Library] --> B[WordPress Generates Sub-sizes]
+    B -->|Original, Thumbnail, Medium, Large, etc.| C(Media Sync Interface)
+    
+    %% Sync Trigger Phase
+    C -->|User Clicks 'Sync to S3'| D{Is Master Toggle Enabled?}
+    D -->|No| E[Default: Images Served Locally from Server]
+    D -->|Yes| F[Trigger AJAX Sync Action]
+    
+    %% AWS S3 Upload Phase
+    F --> G[S3 Helper Class]
+    G -->|Uploads Original File| H[(AWS S3 Bucket)]
+    G -->|Iterates & Uploads All Sub-sizes| H
+    
+    %% Metadata and URL Rewriting Phase
+    H -->|Return S3 Base URL| I[Save S3 URL & Sync Status to Post Meta]
+    I --> J[Frontend Rendering]
+    
+    %% Auto-replace Links Phase
+    J -->|Filter: wp_get_attachment_url| K[Auto-replace Main Attachment Links]
+    J -->|Filter: wp_get_attachment_image_src| L[Auto-replace Image Source Arrays]
+    J -->|Filter: wp_calculate_image_srcset| M[Auto-replace Responsive Srcset Links]
+    J -->|Filter: the_content| N[Auto-replace Hardcoded Post Images]
+    
+    %% Final View
+    K & L & M & N --> O((End User Views Images Served Directly From S3))
 ```
 
 ## 🛠️ Installation & Setup
