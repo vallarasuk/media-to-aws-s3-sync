@@ -1,0 +1,89 @@
+/* Media to AWS S3 Sync Admin Styles */
+
+.media-to-aws-s3-sync-container {
+    margin-top: 5px;
+}
+
+.media-to-aws-s3-sync-buttons {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 5px;
+}
+
+.media-to-aws-s3-sync-url-input {
+    width: 100%;
+    margin-bottom: 8px;
+    font-size: 12px;
+}
+
+/* Toast Notifications */
+#media-to-aws-s3-sync-toast-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 999999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.media-to-aws-s3-sync-toast {
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    display: flex;
+    flex-direction: column;
+    min-width: 250px;
+    transition: all 0.3s ease;
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+.media-to-aws-s3-sync-toast.success {
+    background-color: #46b450;
+    border: 1px solid #3ca346;
+}
+
+.media-to-aws-s3-sync-toast.error {
+    background-color: #dc3232;
+    border: 1px solid #c92c2c;
+}
+
+.media-to-aws-s3-sync-toast-header {
+    display: flex;
+    align-items: center;
+    font-weight: bold;
+}
+
+.media-to-aws-s3-sync-toast-link {
+    color: #fff;
+    text-decoration: underline;
+    font-size: 12px;
+    margin-top: 5px;
+    font-weight: 500;
+}
+
+.media-to-aws-s3-sync-toast-link:hover {
+    color: #eee;
+}
+
+.media-to-aws-s3-sync-status-msg.error-msg {
+    color: #dc3232;
+    font-weight: bold;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.media-to-aws-s3-sync-description {
+    margin: 5px 0 10px;
+}
+
+.media-to-aws-s3-sync-container .spinner {
+    float: none;
+    margin: 0 5px;
+    vertical-align: middle;
+}
+
