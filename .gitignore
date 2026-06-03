@@ -1,0 +1,29 @@
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDEs and Editors
+.idea/
+.vscode/
+*.sublime-workspace
+*.swp
+
+# Composer
+vendor/
+composer.lock
+
+# NPM / Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Log files
+*.log
+
+# Plugin specific / Builds
+*.zip
