@@ -1,6 +1,6 @@
-=== Media to AWS S3 Sync ===
-Contributors: Vallarasu Kanthasamy
-Tags: search media to s3 sync, medi to aws sync, aws s3, sync media, Vallarasu kanthasamy
+=== Vallarasu Media Bucket Sync for Amazon S3 ===
+Contributors: vallarasuk
+Tags: amazon s3, sync media, aws, offload media
 Requires at least: 5.0
 Tested up to: 7.0
 Stable tag: 1.0.1
@@ -11,11 +11,20 @@ A powerful and standalone plugin to sync media attachments to AWS S3.
 
 == Description ==
 
-The **Media to AWS S3 Sync** plugin, developed by **Vallarasu kanthasamy**, allows WordPress users to effortlessly sync their media library to Amazon S3. 
+The **Vallarasu Media Bucket Sync for Amazon S3** plugin, developed by **vallarasuk**, allows WordPress users to effortlessly sync their media library to Amazon S3. 
 
-If you are looking to **search media to s3 sync** or perform a **medi to aws sync**, this plugin provides everything you need in a simple, easy-to-use interface.
+With a master enable/disable toggle, you have complete control over whether media is synchronized to Amazon S3. Your media is securely transferred to your configured S3 bucket, saving your server space and offloading media delivery.
 
-With a master enable/disable toggle, you have complete control over whether media is synchronized to AWS S3. Your media is securely transferred to your configured S3 bucket, saving your server space and offloading media delivery.
+== External services ==
+
+This plugin connects to Amazon Web Services (AWS) S3 to store and serve your media files. 
+It requires an AWS account and a configured S3 bucket.
+
+When you choose to sync an image or file, the plugin sends the file data, file name, and MIME type directly to your configured Amazon S3 bucket via the AWS API.
+
+This service is provided by Amazon Web Services, Inc.:
+* [AWS Terms of Service](https://aws.amazon.com/terms/)
+* [AWS Privacy Policy](https://aws.amazon.com/privacy/)
 
 ### Key Features
 * Seamlessly sync media attachments to your AWS S3 bucket.
