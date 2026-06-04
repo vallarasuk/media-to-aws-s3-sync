@@ -1,14 +1,14 @@
 <?php
 /**
- * Plugin Name:       Media to AWS S3 Sync
- * Plugin URI:        https://github.com/vallarasuk/media-to-aws-s3-sync
- * Description:       A powerful and standalone plugin to sync media attachments to AWS S3. Easily search media to s3 sync, or medi to aws sync.
+ * Plugin Name:       Vallarasu Media Bucket Sync for Amazon S3
+ * Plugin URI:        https://github.com/vallarasuk/vallarasu-media-bucket-sync-amazon-s3
+ * Description:       A powerful and standalone plugin to sync media attachments to Amazon S3.
  * Version:           1.0.1
  * Author:            Vallarasu Kanthasamy
  * Author URI:        https://github.com/vallarasuk
  * License:           GPL-2.0+
- * Text Domain:       media-to-aws-s3-sync
- * Tags:              search media to s3 sync, medi to aws sync, aws s3, sync media, Vallarasu kanthasamy
+ * Text Domain:       vallarasu-media-bucket-sync-amazon-s3
+ * Tags:              amazon s3, sync media, aws, offload media
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -29,6 +29,16 @@ function media_to_aws_s3_sync_admin_scripts() {
         '1.0.0'
     );
 
+    wp_add_inline_style( 'media-to-aws-s3-sync-admin-css', '
+        .m2s3-switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+        .m2s3-switch input { opacity: 0; width: 0; height: 0; }
+        .m2s3-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 20px; }
+        .m2s3-slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; }
+        .m2s3-switch input:checked + .m2s3-slider { background-color: #2271b1; }
+        .m2s3-switch input:focus + .m2s3-slider { box-shadow: 0 0 1px #2271b1; }
+        .m2s3-switch input:checked + .m2s3-slider:before { transform: translateX(20px); }
+    ');
+
     wp_enqueue_script(
         'media-to-aws-s3-sync-admin-js',
         plugins_url( 'admin/js/media-to-aws-s3-sync-admin.js', __FILE__ ),
@@ -36,6 +46,25 @@ function media_to_aws_s3_sync_admin_scripts() {
         '1.0.0',
         true
     );
+
+    wp_add_inline_script( 'media-to-aws-s3-sync-admin-js', '
+        document.addEventListener("DOMContentLoaded", function() {
+            var toggle = document.getElementById("m2s3_toggle");
+            if (!toggle) return;
+            function updateVisibility() {
+                var toggleRow = toggle.closest("tr");
+                if (!toggleRow) return;
+                
+                var sibling = toggleRow.nextElementSibling;
+                while (sibling) {
+                    sibling.style.display = toggle.checked ? "" : "none";
+                    sibling = sibling.nextElementSibling;
+                }
+            }
+            toggle.addEventListener("change", updateVisibility);
+            updateVisibility(); // Run on load
+        });
+    ');
 
     wp_localize_script(
         'media-to-aws-s3-sync-admin-js',
@@ -56,7 +85,7 @@ function media_to_aws_s3_sync_add_settings_page() {
         'Media to S3 Sync Settings',
         'Media to S3 Sync',
         'manage_options',
-        'media-to-aws-s3-sync',
+        'vallarasu-media-bucket-sync-amazon-s3',
         'media_to_aws_s3_sync_render_settings_page'
     );
 }
@@ -91,14 +120,14 @@ function media_to_aws_s3_sync_register_settings() {
         'media_to_aws_s3_sync_aws_section',
         'AWS S3 Configuration',
         'media_to_aws_s3_sync_section_callback',
-        'media-to-aws-s3-sync'
+        'vallarasu-media-bucket-sync-amazon-s3'
     );
 
     add_settings_field(
         'media_to_aws_s3_sync_enabled',
         'Enable AWS S3 Sync',
         'media_to_aws_s3_sync_enabled_callback',
-        'media-to-aws-s3-sync',
+        'vallarasu-media-bucket-sync-amazon-s3',
         'media_to_aws_s3_sync_aws_section'
     );
 
@@ -106,7 +135,7 @@ function media_to_aws_s3_sync_register_settings() {
         'media_to_aws_s3_sync_aws_access_key_id',
         'AWS Access Key ID',
         'media_to_aws_s3_sync_access_key_callback',
-        'media-to-aws-s3-sync',
+        'vallarasu-media-bucket-sync-amazon-s3',
         'media_to_aws_s3_sync_aws_section'
     );
 
@@ -114,7 +143,7 @@ function media_to_aws_s3_sync_register_settings() {
         'media_to_aws_s3_sync_aws_secret_access_key',
         'AWS Secret Access Key',
         'media_to_aws_s3_sync_secret_access_key_callback',
-        'media-to-aws-s3-sync',
+        'vallarasu-media-bucket-sync-amazon-s3',
         'media_to_aws_s3_sync_aws_section'
     );
 
@@ -122,7 +151,7 @@ function media_to_aws_s3_sync_register_settings() {
         'media_to_aws_s3_sync_aws_region',
         'AWS Region',
         'media_to_aws_s3_sync_region_callback',
-        'media-to-aws-s3-sync',
+        'vallarasu-media-bucket-sync-amazon-s3',
         'media_to_aws_s3_sync_aws_section'
     );
 
@@ -130,7 +159,7 @@ function media_to_aws_s3_sync_register_settings() {
         'media_to_aws_s3_sync_aws_s3_bucket',
         'S3 Bucket Name',
         'media_to_aws_s3_sync_bucket_callback',
-        'media-to-aws-s3-sync',
+        'vallarasu-media-bucket-sync-amazon-s3',
         'media_to_aws_s3_sync_aws_section'
     );
 }
@@ -152,41 +181,11 @@ function media_to_aws_s3_sync_enabled_callback() {
     // Hidden input ensures '0' is sent if unchecked
     echo '<input type="hidden" name="media_to_aws_s3_sync_enabled" value="0">';
     
-    // CSS for the toggle
-    echo '<style>
-        .m2s3-switch { position: relative; display: inline-block; width: 40px; height: 20px; }
-        .m2s3-switch input { opacity: 0; width: 0; height: 0; }
-        .m2s3-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 20px; }
-        .m2s3-slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; }
-        .m2s3-switch input:checked + .m2s3-slider { background-color: #2271b1; }
-        .m2s3-switch input:focus + .m2s3-slider { box-shadow: 0 0 1px #2271b1; }
-        .m2s3-switch input:checked + .m2s3-slider:before { transform: translateX(20px); }
-    </style>';
-
     // The Toggle Checkbox
     echo '<label class="m2s3-switch">
             <input type="checkbox" id="m2s3_toggle" name="media_to_aws_s3_sync_enabled" value="1" ' . checked( '1', $value, false ) . '>
             <span class="m2s3-slider"></span>
           </label>';
-
-    // Javascript to hide/show other fields
-    echo '<script>
-        document.addEventListener("DOMContentLoaded", function() {
-            var toggle = document.getElementById("m2s3_toggle");
-            function updateVisibility() {
-                var toggleRow = toggle.closest("tr");
-                if (!toggleRow) return;
-                
-                var sibling = toggleRow.nextElementSibling;
-                while (sibling) {
-                    sibling.style.display = toggle.checked ? "" : "none";
-                    sibling = sibling.nextElementSibling;
-                }
-            }
-            toggle.addEventListener("change", updateVisibility);
-            updateVisibility(); // Run on load
-        });
-    </script>';
 }
 
 function media_to_aws_s3_sync_access_key_callback() {
@@ -222,7 +221,7 @@ function media_to_aws_s3_sync_render_settings_page() {
         <form action="options.php" method="post">
             <?php
             settings_fields( 'media_to_aws_s3_sync_settings_group' );
-            do_settings_sections( 'media-to-aws-s3-sync' );
+            do_settings_sections( 'vallarasu-media-bucket-sync-amazon-s3' );
             submit_button( 'Save AWS Settings' );
             ?>
         </form>
@@ -293,7 +292,7 @@ function media_to_aws_s3_sync_attachment_fields_to_edit( $form_fields, $post ) {
     $html = media_to_aws_s3_sync_get_attachment_html( $post->ID );
 
     $form_fields['media_to_aws_s3_sync'] = array(
-        'label' => __( 'S3 Sync', 'media-to-aws-s3-sync' ),
+        'label' => __( 'S3 Sync', 'vallarasu-media-bucket-sync-amazon-s3' ),
         'input' => 'html',
         'html'  => $html,
     );

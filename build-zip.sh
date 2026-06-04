@@ -4,8 +4,8 @@
 # This script packages the Media to AWS S3 Sync plugin into a clean .zip file
 # suitable for submission to the WordPress Plugin Directory for review.
 
-PLUGIN_DIR="media-to-aws-s3-sync"
-ZIP_NAME="media-to-aws-s3-sync.zip"
+PLUGIN_DIR="vallarasu-media-bucket-sync-amazon-s3"
+ZIP_NAME="vallarasu-media-bucket-sync-amazon-s3.zip"
 
 echo "📦 Starting packaging process for WordPress Plugin Directory submission..."
 
