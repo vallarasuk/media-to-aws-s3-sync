@@ -39,7 +39,11 @@ echo "🧹 Cleaning out the SVN trunk folder..."
 rm -rf "$SVN_DIR/trunk/"*
 
 echo "📂 Copying fresh files from development to SVN trunk..."
-cp -r "$SRC_DIR"/{admin,includes,tests,assets,index.php,uninstall.php,readme.txt,$MAIN_FILE,CHANGELOG.md,README.md,TESTING.md,build-zip.sh,phpunit.xml.dist} "$SVN_DIR/trunk/"
+cp -r "$SRC_DIR"/{admin,includes,tests,index.php,uninstall.php,readme.txt,$MAIN_FILE,CHANGELOG.md,README.md,TESTING.md,build-zip.sh,phpunit.xml.dist} "$SVN_DIR/trunk/"
+
+echo "🖼️ Copying WordPress.org assets..."
+mkdir -p "$SVN_DIR/assets/"
+cp -r "$SRC_DIR/assets/"* "$SVN_DIR/assets/" || true
 
 # Remove the deploy script itself from trunk so it stays private on your system
 rm -f "$SVN_DIR/trunk/deploy.sh"
