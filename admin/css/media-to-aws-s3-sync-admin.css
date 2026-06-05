@@ -87,3 +87,60 @@
     vertical-align: middle;
 }
 
+/* Bulk Sync Tool */
+.m2s3-bulk-sync-wrapper {
+    background: #fff;
+    padding: 20px;
+    border: 1px solid #ccd0d4;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+    max-width: 800px;
+}
+
+#m2s3-bulk-sync-spinner {
+    float: none;
+    margin: 0 5px;
+    vertical-align: middle;
+}
+
+.m2s3-progress-bar-wrap {
+    width: 100%;
+    background-color: #f1f1f1;
+    border-radius: 4px;
+    overflow: hidden;
+    height: 20px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+}
+
+.m2s3-progress-bar-fill {
+    height: 100%;
+    width: 0%;
+    background-color: #2271b1;
+    transition: width 0.3s ease;
+}
+
+#m2s3-bulk-sync-status-text {
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.m2s3-log-box {
+    background-color: #1d2327;
+    color: #a7aaad;
+    padding: 10px;
+    font-family: monospace;
+    font-size: 12px;
+    height: 200px;
+    overflow-y: auto;
+    border-radius: 4px;
+    border: 1px solid #000;
+}
+
+.m2s3-log-box div {
+    margin-bottom: 4px;
+    line-height: 1.4;
+}
+
+.m2s3-log-box .log-success { color: #46b450; }
+.m2s3-log-box .log-error { color: #dc3232; }
+.m2s3-log-box .log-info { color: #72aee6; }

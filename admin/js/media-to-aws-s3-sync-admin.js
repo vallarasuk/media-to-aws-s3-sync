@@ -167,4 +167,112 @@ jQuery(document).ready(function($) {
             });
         }, 2000);
     }
+
+    // Bulk Sync Logic
+    $('#m2s3-bulk-sync-btn').on('click', function(e) {
+        e.preventDefault();
+        var $btn = $(this);
+        var $spinner = $('#m2s3-bulk-sync-spinner');
+        var $progressContainer = $('#m2s3-bulk-sync-progress-container');
+        var $progressFill = $('#m2s3-bulk-sync-progress-fill');
+        var $statusText = $('#m2s3-bulk-sync-status-text');
+        var $logBox = $('#m2s3-bulk-sync-log');
+
+        var ajaxUrl = window.media_to_aws_s3_sync_vars && window.media_to_aws_s3_sync_vars.ajaxurl ? window.media_to_aws_s3_sync_vars.ajaxurl : (window.ajaxurl || '/wp-admin/admin-ajax.php');
+        var nonce = window.media_to_aws_s3_sync_vars && window.media_to_aws_s3_sync_vars.nonce ? window.media_to_aws_s3_sync_vars.nonce : '';
+
+        $btn.prop('disabled', true);
+        $spinner.addClass('is-active');
+        $logBox.empty().append('<div class="log-info">Starting Bulk Sync process...</div>');
+        $progressContainer.show();
+        $progressFill.css('width', '0%');
+        $statusText.text('Querying unsynced attachments...');
+
+        $.ajax({
+            url: ajaxUrl,
+            type: 'POST',
+            dataType: 'json',
+            data: {
+                action: 'media_to_aws_s3_bulk_sync_get_unsynced',
+                nonce: nonce
+            },
+            success: function(response) {
+                if (response.success) {
+                    var ids = response.data.ids;
+                    var total = response.data.total;
+                    
+                    if (total === 0) {
+                        $spinner.removeClass('is-active');
+                        $btn.prop('disabled', false);
+                        $statusText.text('All media is already synced!');
+                        $logBox.append('<div class="log-success">No unsynced attachments found.</div>');
+                        return;
+                    }
+
+                    $statusText.text('Processing: 0 / ' + total);
+                    $logBox.append('<div class="log-info">Found ' + total + ' unsynced attachments. Beginning upload...</div>');
+                    processBatch(ids, total, 0, ajaxUrl, nonce);
+                } else {
+                    $spinner.removeClass('is-active');
+                    $btn.prop('disabled', false);
+                    $logBox.append('<div class="log-error">Error: ' + (response.data.message || 'Failed to query attachments.') + '</div>');
+                }
+            },
+            error: function() {
+                $spinner.removeClass('is-active');
+                $btn.prop('disabled', false);
+                $logBox.append('<div class="log-error">AJAX Error occurred while querying attachments.</div>');
+            }
+        });
+
+        function processBatch(ids, total, processedCount, ajaxUrl, nonce) {
+            if (ids.length === 0) {
+                $spinner.removeClass('is-active');
+                $btn.prop('disabled', false);
+                $logBox.append('<div class="log-success">Bulk Sync Completed!</div>');
+                return;
+            }
+
+            var batchSize = 5;
+            var currentBatch = ids.splice(0, batchSize);
+
+            $.ajax({
+                url: ajaxUrl,
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    action: 'media_to_aws_s3_bulk_sync_process_batch',
+                    attachment_ids: currentBatch,
+                    nonce: nonce
+                },
+                success: function(response) {
+                    if (response.success && response.data.results) {
+                        $.each(response.data.results, function(index, result) {
+                            processedCount++;
+                            var logClass = result.status === 'success' ? 'log-success' : 'log-error';
+                            $logBox.append('<div class="' + logClass + '">ID ' + result.id + ': ' + result.message + '</div>');
+                        });
+                        
+                        var percentage = Math.round((processedCount / total) * 100);
+                        $progressFill.css('width', percentage + '%');
+                        $statusText.text('Processing: ' + processedCount + ' / ' + total + ' (' + percentage + '%)');
+                        $logBox.scrollTop($logBox[0].scrollHeight);
+
+                        // Call the next batch
+                        processBatch(ids, total, processedCount, ajaxUrl, nonce);
+                    } else {
+                        $logBox.append('<div class="log-error">Batch Error: ' + (response.data ? response.data.message : 'Unknown error') + '</div>');
+                        $spinner.removeClass('is-active');
+                        $btn.prop('disabled', false);
+                        $logBox.append('<div class="log-error">Bulk Sync aborted due to error.</div>');
+                    }
+                },
+                error: function() {
+                    $logBox.append('<div class="log-error">AJAX Error occurred while processing batch.</div>');
+                    $spinner.removeClass('is-active');
+                    $btn.prop('disabled', false);
+                }
+            });
+        }
+    });
 });

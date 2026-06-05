@@ -2,6 +2,12 @@
 
 All notable changes to the **Media to AWS S3 Sync** plugin will be documented in this file.
 
+## [1.0.2] - 2026-06-05
+### Added
+- Introduced the Bulk Sync Tool: Automatically batch-syncs your entire older media library to Amazon S3.
+- Added real-time progress bar and upload logging UI.
+- Improved error handling for S3 sub-size uploads and configuration validation.
+
 ## [1.0.1] - 2026-06-03
 ### Added
 - Added global enable/disable master toggle.

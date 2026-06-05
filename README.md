@@ -13,6 +13,7 @@ Developed by **[Vallarasu Kanthasamy](https://github.com/vallarasuk)**.
 *   **Seamless S3 Sync**: Quickly sync your media attachments to your AWS S3 bucket.
 *   **Global Enable/Disable Toggle**: Immediate frontend control over the sync status.
 *   **Sub-size Syncing**: Automatically syncs all WordPress-generated responsive image sub-sizes.
+*   **Bulk Sync Tool**: Automatically background-sync your entire existing media library to Amazon S3 without server timeouts.
 *   **Dynamic URL Rewriting**: Automatically rewrites frontend image URLs to securely serve them directly from S3.
 *   **User-friendly Configuration**: Easy to use settings panel in the WordPress admin area.
 *   **Lightweight**: Highly performant with no unnecessary bloat.
