@@ -3,7 +3,7 @@
  * Plugin Name:       Vallarasu Media Bucket Sync for Amazon S3
  * Plugin URI:        https://github.com/vallarasuk/vallarasu-media-bucket-sync-amazon-s3
  * Description:       A powerful and standalone plugin to sync media attachments to Amazon S3.
- * Version:           1.0.1
+ * Version:           1.0.2
  * Author:            Vallarasu Kanthasamy
  * Author URI:        https://github.com/vallarasuk
  * License:           GPL-2.0+
@@ -225,6 +225,22 @@ function media_to_aws_s3_sync_render_settings_page() {
             submit_button( 'Save AWS Settings' );
             ?>
         </form>
+
+        <hr>
+        <h2>Bulk Sync Tool</h2>
+        <p>Use this tool to automatically sync all existing media attachments to Amazon S3 in the background. It will process files that have not yet been synced.</p>
+        <div class="m2s3-bulk-sync-wrapper">
+            <button type="button" id="m2s3-bulk-sync-btn" class="button button-primary">Start Bulk Sync</button>
+            <span class="spinner" id="m2s3-bulk-sync-spinner"></span>
+            
+            <div id="m2s3-bulk-sync-progress-container" style="display:none; margin-top: 15px;">
+                <div class="m2s3-progress-bar-wrap">
+                    <div class="m2s3-progress-bar-fill" id="m2s3-bulk-sync-progress-fill"></div>
+                </div>
+                <p id="m2s3-bulk-sync-status-text">Processing: 0 / 0</p>
+                <div class="m2s3-log-box" id="m2s3-bulk-sync-log"></div>
+            </div>
+        </div>
     </div>
     <?php
 }
@@ -380,6 +396,128 @@ function media_to_aws_s3_sync_ajax_handler() {
     ) );
 }
 add_action( 'wp_ajax_media_to_aws_s3_sync_action', 'media_to_aws_s3_sync_ajax_handler' );
+
+/**
+ * AJAX action handler for getting total unsynced attachments.
+ */
+function media_to_aws_s3_bulk_sync_get_unsynced() {
+    check_ajax_referer( 'media_to_aws_s3_sync_nonce', 'nonce' );
+
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_send_json_error( array( 'message' => 'Unauthorized action.' ) );
+    }
+
+    $aws_key    = get_option('media_to_aws_s3_sync_aws_access_key_id');
+    $aws_secret = get_option('media_to_aws_s3_sync_aws_secret_access_key');
+    $aws_region = get_option( 'media_to_aws_s3_sync_aws_region' );
+    $aws_bucket = get_option( 'media_to_aws_s3_sync_aws_s3_bucket' );
+
+    if ( empty( $aws_key ) || empty( $aws_secret ) || empty( $aws_region ) || empty( $aws_bucket ) ) {
+        wp_send_json_error( array( 'message' => 'AWS S3 is not fully configured.' ) );
+    }
+
+    global $wpdb;
+    
+    // Query attachments that do NOT have the synced meta flag set to '1'
+    $query = "
+        SELECT p.ID 
+        FROM {$wpdb->posts} p
+        LEFT JOIN {$wpdb->postmeta} pm ON (p.ID = pm.post_id AND pm.meta_key = '_media_to_aws_s3_sync_s3_synced')
+        WHERE p.post_type = 'attachment' 
+        AND p.post_status = 'inherit'
+        AND (pm.meta_value IS NULL OR pm.meta_value != '1')
+        ORDER BY p.ID DESC
+    ";
+
+    $unsynced_ids = $wpdb->get_col( $query );
+
+    wp_send_json_success( array(
+        'ids'   => $unsynced_ids,
+        'total' => count( $unsynced_ids )
+    ) );
+}
+add_action( 'wp_ajax_media_to_aws_s3_bulk_sync_get_unsynced', 'media_to_aws_s3_bulk_sync_get_unsynced' );
+
+/**
+ * AJAX action handler for processing a batch of attachments.
+ */
+function media_to_aws_s3_bulk_sync_process_batch() {
+    check_ajax_referer( 'media_to_aws_s3_sync_nonce', 'nonce' );
+
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_send_json_error( array( 'message' => 'Unauthorized action.' ) );
+    }
+
+    $attachment_ids = isset( $_POST['attachment_ids'] ) ? array_map( 'intval', (array) $_POST['attachment_ids'] ) : array();
+    if ( empty( $attachment_ids ) ) {
+        wp_send_json_error( array( 'message' => 'No attachment IDs provided.' ) );
+    }
+
+    $results = array();
+    $aws_region = get_option( 'media_to_aws_s3_sync_aws_region' );
+    $aws_bucket = get_option( 'media_to_aws_s3_sync_aws_s3_bucket' );
+    $upload_dir = wp_upload_dir();
+
+    foreach ( $attachment_ids as $attachment_id ) {
+        $file_path = get_attached_file( $attachment_id );
+        if ( ! $file_path || ! file_exists( $file_path ) ) {
+            $results[] = array( 'id' => $attachment_id, 'status' => 'error', 'message' => 'File not found locally.' );
+            continue;
+        }
+
+        $mime_type = get_post_mime_type( $attachment_id );
+        if ( ! $mime_type ) {
+            $mime_type = 'application/octet-stream';
+        }
+
+        $relative_path = ltrim( str_replace( $upload_dir['basedir'], '', $file_path ), '/' );
+        $s3_key = 'uploads/' . $relative_path;
+
+        // Trigger upload for main file
+        $upload_result = Media_To_AWS_S3_Sync_S3::upload( $file_path, $s3_key, $mime_type );
+
+        if ( is_wp_error( $upload_result ) ) {
+            $results[] = array( 'id' => $attachment_id, 'status' => 'error', 'message' => $upload_result->get_error_message() );
+            continue;
+        }
+
+        // Trigger upload for sub-sizes
+        $metadata = wp_get_attachment_metadata( $attachment_id );
+        $has_errors = false;
+        if ( ! empty( $metadata['sizes'] ) ) {
+            $base_dir = dirname( $file_path ) . '/';
+            $base_s3_key = dirname( $s3_key ) . '/';
+            foreach ( $metadata['sizes'] as $size => $size_info ) {
+                 $size_path = $base_dir . $size_info['file'];
+                 $size_s3_key = $base_s3_key . $size_info['file'];
+                 $size_mime = isset( $size_info['mime-type'] ) ? $size_info['mime-type'] : $mime_type;
+                 if ( file_exists( $size_path ) ) {
+                     $sub_res = Media_To_AWS_S3_Sync_S3::upload( $size_path, $size_s3_key, $size_mime );
+                     if ( is_wp_error( $sub_res ) ) {
+                         $has_errors = true;
+                         $results[] = array( 'id' => $attachment_id, 'status' => 'error', 'message' => 'Sub-size ' . $size . ' failed: ' . $sub_res->get_error_message() );
+                     }
+                 }
+            }
+        }
+
+        // Success! Save metadata (only if no critical errors, though main file succeeded)
+        $s3_url = 'https://' . $aws_bucket . '.s3.' . $aws_region . '.amazonaws.com/' . ltrim( $s3_key, '/' );
+        update_post_meta( $attachment_id, '_media_to_aws_s3_sync_s3_synced', '1' );
+        update_post_meta( $attachment_id, '_media_to_aws_s3_sync_s3_url', $s3_url );
+
+        if ( ! $has_errors ) {
+            $results[] = array( 'id' => $attachment_id, 'status' => 'success', 'message' => 'Synced successfully.' );
+        } else {
+            $results[] = array( 'id' => $attachment_id, 'status' => 'info', 'message' => 'Main file synced, but some sub-sizes failed.' );
+        }
+    }
+
+    wp_send_json_success( array(
+        'results' => $results
+    ) );
+}
+add_action( 'wp_ajax_media_to_aws_s3_bulk_sync_process_batch', 'media_to_aws_s3_bulk_sync_process_batch' );
 
 /**
  * Filter to rewrite the main attachment URL to S3.

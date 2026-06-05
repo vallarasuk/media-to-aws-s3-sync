@@ -3,7 +3,7 @@ Contributors: vallarasuk
 Tags: amazon s3, sync media, aws, offload media
 Requires at least: 5.0
 Tested up to: 7.0
-Stable tag: 1.0.1
+Stable tag: 1.0.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -30,6 +30,7 @@ This service is provided by Amazon Web Services, Inc.:
 * Seamlessly sync media attachments to your AWS S3 bucket.
 * Global Enable/Disable master toggle for immediate frontend control.
 * Automatically syncs all WordPress-generated responsive image sub-sizes.
+* Bulk Sync Tool: Automatically background-sync your entire existing media library to Amazon S3 without server timeouts.
 * Dynamically rewrites frontend image URLs to securely serve them directly from S3.
 * User-friendly configuration screen.
 * Lightweight and highly performant.
@@ -56,6 +57,11 @@ Go to **Settings > Media to S3 Sync** and toggle the Enable/Disable button to OF
 This plugin was developed by Vallarasu kanthasamy to solve media offloading issues easily.
 
 == Changelog ==
+
+= 1.0.2 =
+* Introduced the Bulk Sync Tool: Automatically batch-syncs your entire older media library to Amazon S3.
+* Added real-time progress bar and upload logging UI.
+* Improved error handling for S3 sub-size uploads and configuration validation.
 
 = 1.0.1 =
 * Added global enable/disable master toggle.
