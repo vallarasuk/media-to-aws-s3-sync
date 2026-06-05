@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="assets/icon-256x256.png" alt="Plugin Icon" width="128" height="128" />
+</div>
+
 # Vallarasu Media Bucket Sync for Amazon S3
 
 **Vallarasu Media Bucket Sync for Amazon S3** is a powerful and standalone WordPress plugin that allows you to effortlessly sync your media library attachments to Amazon S3. With a simple interface and a master toggle switch, this plugin gives you complete control over media synchronization, offloading media delivery from your server to a highly scalable S3 bucket.
